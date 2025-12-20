@@ -1,0 +1,95 @@
+{
+  "name": "Email Campaign – Google Sheets + SMTP + Tracking",
+  "nodes": [
+    {
+      "id": "ManualTrigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [200, 300]
+    },
+    {
+      "id": "ReadSheet",
+      "name": "Read Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [400, 300],
+      "parameters": {
+        "operation": "read",
+        "sheetId": "PUT_GOOGLE_SHEET_ID",
+        "range": "Sheet1"
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_CRED_ID",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "id": "IfEmail",
+      "name": "IF Email Exists",
+      "type": "n8n-nodes-base.if",
+      "position": [600, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.email}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "SetVars",
+      "name": "Set Campaign Variables",
+      "type": "n8n-nodes-base.set",
+      "position": [800, 300],
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "campaign_id", "value": "CA-2025-001" },
+            { "name": "sender_name", "value": "Nitish | Linuxndroid" },
+            { "name": "base_tracking_url", "value": "https://linux20261.app.n8n.cloud/webhook/click-track" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Tracking",
+      "name": "Generate Tracking URL",
+      "type": "n8n-nodes-base.function",
+      "position": [1000, 300],
+      "parameters": {
+        "functionCode": "const crypto = require('crypto');\nitem.tracking_id = crypto.randomUUID();\nitem.tracking_url = `${item.base_tracking_url}?cid=${item.campaign_id}&tid=${item.tracking_id}&email=${encodeURIComponent(item.email)}`;\nreturn item;"
+      }
+    },
+    {
+      "id": "SendEmail",
+      "name": "Send Email (SMTP)",
+      "type": "n8n-nodes-base.emailSend",
+      "position": [1200, 300],
+      "parameters": {
+        "fromEmail": "security@yourdomain.com",
+        "fromName": "={{$json.sender_name}}",
+        "toEmail": "={{$json.email}}",
+        "toName": "={{$json.name}}",
+        "subject": "Important Security Awareness Notice",
+        "html": "<h2>Hello {{$json.name}},</h2><p>This email is part of an authorized security awareness campaign.</p><p><a href=\"{{$json.tracking_url}}\" style=\"background:#2563eb;color:#fff;padding:12px 20px;text-decoration:none;border-radius:4px;\">Review Activity</a></p><p>Regards,<br><b>Nitish</b></p>"
+      },
+      "credentials": {
+        "smtp": {
+          "id": "SMTP_CRED_ID",
+          "name": "SMTP Account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": { "main": [[{ "node": "Read Google Sheet", "type": "main" }]] },
+    "Read Google Sheet": { "main": [[{ "node": "IF Email Exists", "type": "main" }]] },
+    "IF Email Exists": { "main": [[{ "node": "Set Campaign Variables", "type": "main" }]] },
+    "Set Campaign Variables": { "main": [[{ "node": "Generate Tracking URL", "type": "main" }]] },
+    "Generate Tracking URL": { "main": [[{ "node": "Send Email (SMTP)", "type": "main" }]] }
+  }
+}

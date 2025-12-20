@@ -1,0 +1,106 @@
+{
+  "name": "Email Click Tracker – Google Sheets",
+  "nodes": [
+    {
+      "id": "Webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [300, 300],
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "click-track",
+        "responseMode": "responseNode"
+      }
+    },
+    {
+      "id": "NormalizeClick",
+      "name": "Normalize Click Data",
+      "type": "n8n-nodes-base.set",
+      "position": [520, 300],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            { "name": "event", "value": "click" },
+            { "name": "campaign_id", "value": "={{$query.cid}}" },
+            { "name": "tracking_id", "value": "={{$query.tid}}" },
+            { "name": "email", "value": "={{$query.email}}" },
+            { "name": "ip", "value": "={{$headers['x-forwarded-for'] || $json.ip}}" },
+            { "name": "user_agent", "value": "={{$headers['user-agent']}}" },
+            { "name": "timestamp", "value": "={{$now}}" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "AppendSheet",
+      "name": "Append Click to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [760, 300],
+      "parameters": {
+        "operation": "append",
+        "sheetId": "PUT_YOUR_GOOGLE_SHEET_ID",
+        "range": "click_logs",
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_CREDENTIAL_ID",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "id": "Respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [1000, 300],
+      "parameters": {
+        "responseCode": 302,
+        "responseHeaders": {
+          "entries": [
+            {
+              "name": "Location",
+              "value": "https://linuxndroid.in/awareness-complete"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Click Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Click Data": {
+      "main": [
+        [
+          {
+            "node": "Append Click to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Click to Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
