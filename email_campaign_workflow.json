@@ -49,8 +49,8 @@
         "values": {
           "string": [
             { "name": "campaign_id", "value": "CA-2025-001" },
-            { "name": "sender_name", "value": "Nitish | Linuxndroid" },
-            { "name": "base_tracking_url", "value": "https://linux20261.app.n8n.cloud/webhook/click-track" }
+            { "name": "sender_name", "value": "Test Name" },
+            { "name": "base_tracking_url", "value": "Your Link" }
           ]
         }
       }
@@ -93,3 +93,4 @@
     "Generate Tracking URL": { "main": [[{ "node": "Send Email (SMTP)", "type": "main" }]] }
   }
 }
+
